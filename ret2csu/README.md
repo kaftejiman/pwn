@@ -1,7 +1,7 @@
 # ret2csu
 
 I wanted to make a clean and simple explanation of ret2csu exploitation technique as I didnt get it easily with the ressources I found on google.
-As far as my understanding goes, take it with a grain of salt.
+As far as my understanding goes. You should take it with a grain of salt.
 
 Tests carried on a AMD64 Linux Ubuntu.
 
