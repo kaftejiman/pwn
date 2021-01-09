@@ -173,7 +173,7 @@ What if we rop to our popper first so we setup the
 
 
 |    popper   |    caller         |
-| ----------- | -----------------:|
+| ----------- | ----------------- |
 | pop rbx     | mov    rdx, r13   |
 | pop rbp     | mov    rsi, r12   |
 | pop r12     | mov    edi, ebp   |
