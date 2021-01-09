@@ -297,11 +297,11 @@ print(p.recvallS())
 
 ## References:
  
- * https://eli.thegreenplace.net/2012/08/13/how-statically-linked-programs-run-on-linux
- * https://i.blackhat.com/briefings/asia/2018/asia-18-Marco-return-to-csu-a-new-method-to-bypass-the-64-bit-Linux-ASLR-wp.pdf
- * https://www.cs.stevens.edu/~jschauma/631A/elf.html
- * https://www.voidsecurity.in/2013/07/some-gadget-sequence-for-x8664-rop.html
- * https://ropemporium.com/challenge/ret2csu.html
+ * [eli.thegreenplace.net](https://eli.thegreenplace.net/2012/08/13/how-statically-linked-programs-run-on-linux)
+ * [Blackhat Asia18 Marco return-to-csu](https://i.blackhat.com/briefings/asia/2018/asia-18-Marco-return-to-csu-a-new-method-to-bypass-the-64-bit-Linux-ASLR-wp.pdf)
+ * [~jschauma from stevens.edu](https://www.cs.stevens.edu/~jschauma/631A/elf.html)
+ * [voidsecurity.in](https://www.voidsecurity.in/2013/07/some-gadget-sequence-for-x8664-rop.html)
+ * [ropemporium ret2csu challenge](https://ropemporium.com/challenge/ret2csu.html)
 
 [whodis]: https://raw.githubusercontent.com/kaftejiman/pwn/main/ret2csu/whodis.jpeg 
 [calls]: https://raw.githubusercontent.com/kaftejiman/pwn/main/ret2csu/call_seq.png
