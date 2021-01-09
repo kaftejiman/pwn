@@ -168,9 +168,10 @@ In fact, the disassembly of `__libc_csu_init` goes as follow (with Ghidra, redac
   ```
 
 That sequence of pops starting at `004033d9` ending with a ret looks helpful, call it popper gadget.
-The actual call setup starts at `004033c0` and ends with a call to the value of the address at `R15 + RBX*0x8`, call it caller gadget.
-What if we rop to our popper first so we setup the 
 
+The actual call setup starts at `004033c0` and ends with a call to the value of the address at `R15 + RBX*0x8`, call it caller gadget.
+
+Gadgets are:
 
 |    popper   |    caller         |
 | ----------- | ----------------- |
@@ -182,7 +183,7 @@ What if we rop to our popper first so we setup the
 | pop r15     |
 | ret         |
 
-
+One would notice that 
 
 
 
