@@ -1,18 +1,19 @@
+ELI5 ret2csu 
+DISCLAIMER: as far as I understand, take it with a grain of salt
+
 <div id="table-of-contents">
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#sec-1">1. Who dis?</a></li>
-<li><a href="#sec-2">2. When dis?</a></li>
-<li><a href="#sec-3">3. Why dis?</a></li>
-<li><a href="#sec-4">4. How even?</a></li>
-<li><a href="#sec-5">5. But still.. how?</a></li>
+<li><a href="#sec-1">Who dis?</a></li>
+<li><a href="#sec-2">When dis?</a></li>
+<li><a href="#sec-3">Why dis?</a></li>
+<li><a href="#sec-4">How even?</a></li>
+<li><a href="#sec-5">But still.. how?</a></li>
 </ul>
 </div>
 </div>
 
-ELI5 ret2csu 
-DISCLAIMER: as far as I understand, take it with a grain of salt
 
 # Who dis?<a id="sec-1" name="sec-1"></a>
 
@@ -41,7 +42,7 @@ By default, ld looks for a special symbol called \_start in one of the object fi
 How does a C code actually start?
 
 A correctly compiled and linked C code with gcc shares some attached code since C code requires some support libraries such as the gcc runtime and libc in order to run.
-By following the special symbol \_start of a gcc properly compiled and linked binary image (ie: \`\`\`objdump -d mybinary | grep -A15 "<<sub>start</sub>"\`\`\` ), one will notice some call to \_<sub>libc</sub><sub>start</sub><sub>main</sub> preceding a hlt instruction.
+By following the special symbol \_start of a gcc properly compiled and linked binary image (ie: `objdump -d mybinary | grep -A15 "<<sub>start</sub>"` ), one will notice some call to \_<sub>libc</sub><sub>start</sub><sub>main</sub> preceding a hlt instruction.
 So how does control flow actually pass to our C code?
 
 Running the program stepi from GDB, then some Python script to produce a graph, a sequence of function calls can be summarized as below:
@@ -67,7 +68,7 @@ The same goes for \_<sub>libc</sub><sub>csu</sub><sub>fini</sub> and finalizatio
 
 You can also ask the compiler to register your function to be executed as one of the constructors or destructors. For example:
 
-\`\`\`
+```c
 \\#include <stdio.h>
 
 int main() {
@@ -79,7 +80,7 @@ int main() {
 void myconstructor() {
     printf("this will run before main\n");
 }
-\`\`\`
+```
 
 myconstructor will run before main. The linker places its address in a special array of constructors located in the .ctors section. \_<sub>libc</sub><sub>csu</sub><sub>init</sub> goes over this array and calls all functions listed in it.
 
