@@ -57,7 +57,7 @@ A correctly compiled and linked C code with gcc shares some attached code since 
 
 By following the special symbol `_start` of a gcc properly compiled and linked binary image, 
 
-ie: `objdump -d mybinary | grep -A15 "_start"` , one will notice some call to `_libc_start_main` preceeding a hlt instruction.
+ie: `objdump -d mybinary | grep -A15 "_start"` , one will notice some call to `__libc_start_main` preceeding a hlt instruction.
 
 
 ***So how does control flow actually pass to our C code?***
@@ -67,7 +67,7 @@ Running the program stepi from GDB, then some Python script to produce a graph, 
 ![Function calls sequence][calls]
 
 
-Cool, so what does `_libc_start_main` actually do? Ignoring some details, here's a list of things that it does for a statically linked program:
+Cool, so what does `__libc_start_main` actually do? Ignoring some details, here's a list of things that it does for a statically linked program:
 
 <ul>
 <li>Figure out where environment variables are on the stack.</li>
@@ -83,8 +83,8 @@ Cool, so what does `_libc_start_main` actually do? Ignoring some details, here's
 
 Some programming environments require running custom code before and after main.
 This is implemented by means of cooperation between the compiler/linker and the C library.
-For example, the `_libc_csu_init` (which, as you can see above, is called before the user's main) calls into special code that's inserted by the linker. 
-The same goes for `_libc_csu_fini` and finalization.
+For example, the `__libc_csu_init` (which, as you can see above, is called before the user's main) calls into special code that's inserted by the linker. 
+The same goes for `__libc_csu_fini` and finalization.
 You can also ask the compiler to register your function to be executed as one of the constructors or destructors. 
 
 For example:
@@ -105,8 +105,7 @@ void myconstructor() {
 ```
 
 myconstructor will run before main. The linker places its address in a special array of constructors located in the .ctors section. 
-`_libc_csu_init` goes over this array and calls all functions listed in it. Which is essentially what we will be using for ret2csu.
-
+`__libc_csu_init` goes over this array and calls all functions listed in it. Which is essentially what we will be using for ret2csu.
 
 ***So, since some extra code is attached, what would finding universal gadgets in this code result in?***
 
@@ -116,37 +115,72 @@ Obviously, universal ROP.
 
 ***Where does these gadgets reside? What would they look like? How would one chain those? one asks.***
 
-Examining `_libc_csu_init` in the context of finding some useful re-usable piece of code, one would notice some interesting instruction blocks.
+`__libc_csu_init` does some calls, would it have enough gadgets for a controlled call?
 
-In fact, the disassembly of `_libc_csu_init` goes as follow (redacted):
+In fact, the disassembly of `__libc_csu_init` goes as follow (with Ghidra, redacted):
 
 ```
-$ objdump -d myprogram | grep -A48 '<__libc_csu_init>:'
-0000000000403220 <__libc_csu_init>:
-** some instructions **
-...
-  403290:       4c 89 ea                mov    %r13,%rdx 
-  403293:       4c 89 e6                mov    %r12,%rsi
-  403296:       89 ef                   mov    %ebp,%edi
-  403298:       41 ff 14 df             callq  *(%r15,%rbx,8)
-  40329c:       48 83 c3 01             add    $0x1,%rbx
-  4032a0:       49 39 de                cmp    %rbx,%r14
-  4032a3:       75 eb                   jne    403290 <__libc_csu_init+0x70>
-  4032a5:       48 83 c4 08             add    $0x8,%rsp
-  4032a9:       5b                      pop    %rbx
-  4032aa:       5d                      pop    %rbp
-  4032ab:       41 5c                   pop    %r12
-  4032ad:       41 5d                   pop    %r13
-  4032af:       41 5e                   pop    %r14
-  4032b1:       41 5f                   pop    %r15
-  4032b3:       c3                      retq
+                             **************************************************************
+                             *                          FUNCTION                          *
+                             **************************************************************
+                             undefined __libc_csu_init()
+             undefined         AL:1           <RETURN>
+                             __libc_csu_init                                 XREF[4]:     Entry Point(*), 
+                                                                                          _start:00401dfa(*), 
+                                                                                          _start:00401dfa(*), 004ab2f0(*)  
+        00403350 f3 0f 1e fa     ENDBR64
+
+
+								 ** some instructions **
+
+
+                             LAB_0040339d                                  
+        0040339d 4c 8d 3d        LEA        R15,[__frame_dummy_init_array_entry]
+                 5c 4c 0b 00
+        004033a4 4c 8d 35        LEA        R14,[__do_global_dtors_aux_fini_array_entry]
+                 65 4c 0b 00
+        004033ab e8 50 dc        CALL       _init
+                 ff ff
+        004033b0 4d 29 fe        SUB        R14,R15
+        004033b3 49 c1 fe 03     SAR        R14,0x3
+        004033b7 74 1c           JZ         LAB_004033d5
+        004033b9 31 db           XOR        EBX,EBX
+        004033bb 0f 1f 44        NOP        dword ptr [RAX + RAX*0x1]
+                 00 00
+                             LAB_004033c0                                    
+        004033c0 4c 89 ea        MOV        RDX,R13
+        004033c3 4c 89 e6        MOV        RSI,R12
+        004033c6 89 ef           MOV        EDI,EBP
+        004033c8 41 ff 14 df     CALL       qword ptr [R15 + RBX*0x8]
+        004033cc 48 83 c3 01     ADD        RBX,0x1
+        004033d0 49 39 de        CMP        R14,RBX
+        004033d3 75 eb           JNZ        LAB_004033c0
+                             LAB_004033d5                         
+        004033d5 48 83 c4 08     ADD        RSP,0x8
+        004033d9 5b              POP        RBX
+        004033da 5d              POP        RBP
+        004033db 41 5c           POP        R12
+        004033dd 41 5d           POP        R13
+        004033df 41 5e           POP        R14
+        004033e1 41 5f           POP        R15
+        004033e3 c3              RET
+
   ```
 
+That sequence of pops starting at `004033d9` ending with a ret looks helpful, call it popper gadget.
+The actual call setup starts at `004033c0` and ends with a call to the value of the address at `R15 + RBX*0x8`, call it caller gadget.
+What if we rop to our popper first so we setup the 
 
 
-
-
-* The called function's address is the content of the address referenced by `R15 + RBX*0x8`.
+|    popper   |    caller         |
+| ----------- | -----------------:|
+| pop rbx     | mov    rdx, r13   |
+| pop rbp     | mov    rsi, r12   |
+| pop r12     | mov    edi, ebp   |
+| pop r13     | call qword ptr [r15 + rbx*0x8] |
+| pop r14     | 
+| pop r15     |
+| ret         |
 
 
 
