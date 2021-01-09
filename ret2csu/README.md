@@ -48,8 +48,10 @@ By default, ld looks for a special symbol called \_start in one of the object fi
 ***How does a C code actually start?***
 
 A correctly compiled and linked C code with gcc shares some attached code since C code requires some support libraries such as the gcc runtime and libc in order to run.
-By following the special symbol \_start of a gcc properly compiled and linked binary image 
+By following the special symbol \_start of a gcc properly compiled and linked binary image.
+
 ie: `objdump -d mybinary | grep -A15 "_start"` 
+
 one will notice some call to \_libc\_start\_main preceding a hlt instruction.
 
 
@@ -96,7 +98,8 @@ void myconstructor() {
 }
 ```
 
-myconstructor will run before main. The linker places its address in a special array of constructors located in the .ctors section. \_libc\_csu\_init goes over this array and calls all functions listed in it.
+myconstructor will run before main. The linker places its address in a special array of constructors located in the .ctors section. 
+\_libc\_csu\_init goes over this array and calls all functions listed in it.
 
 Cool, now we have a better picture of how and from where control flow goes.
 
