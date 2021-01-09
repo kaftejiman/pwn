@@ -50,7 +50,7 @@ A program binary image is probably created by the system linker ld which links a
 
 By default, ld looks for a special symbol called `_start` in one of the object files linked into the program, and sets the entry point to the address of that symbol.
 
-(set LD_DEBUG to all when running a program binary `$ LD_DEBUG=all ./program` to see the ld in action)
+(set `LD_DEBUG` to `all` when running a program binary `$ LD_DEBUG=all ./program` to see the ld in action)
 
 
 ***How does a C code actually start?***
