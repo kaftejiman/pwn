@@ -9,9 +9,9 @@ Tests carried on a AMD64 Linux Ubuntu.
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#sec-1">Who dis?</a></li>
-<li><a href="#sec-2">When dis?</a></li>
-<li><a href="#sec-3">Why dis?</a></li>
+<li><a href="#sec-1">What?</a></li>
+<li><a href="#sec-2">When?</a></li>
+<li><a href="#sec-3">Why?</a></li>
 <li><a href="#sec-4">How even?</a></li>
 <li><a href="#sec-5">But still.. how?</a></li>
 <li><a href="#sec-6">In practice would you??</a></li>
@@ -20,19 +20,19 @@ Tests carried on a AMD64 Linux Ubuntu.
 </div>
 
 
-## Who dis?<a id="sec-1" name="sec-1"></a>
+## What?<a id="sec-1" name="sec-1"></a>
 
 ![Who dis?][whodis]
 
 A Universal ROP specific to GNU/Linux that exists in every ELF executable linked against libc. (aka most of them)
 
 
-## When dis?<a id="sec-2" name="sec-2"></a>
+## When?<a id="sec-2" name="sec-2"></a>
 
 When in lack of sufficient gadgets to build your rop (aka lack of control over some register ie: when compiled code is tiny).
 
 
-## Why dis?<a id="sec-3" name="sec-3"></a>
+## Why?<a id="sec-3" name="sec-3"></a>
 
 To have full control over a call.
 
