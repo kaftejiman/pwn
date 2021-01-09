@@ -1,6 +1,6 @@
 # ELI5 ret2csu 
 
-DISCLAIMER: as far as I understand, take it with a grain of salt
+As far as my understanding goes, take it with a grain of salt
 
 <div id="table-of-contents">
 <h2>Table of Contents</h2>
@@ -18,7 +18,7 @@ DISCLAIMER: as far as I understand, take it with a grain of salt
 
 ## Who dis?<a id="sec-1" name="sec-1"></a>
 
-[meme confused black girl]
+![Who dis?][whodis]
 
 A Universal ROP specific to GNU/Linux that exists in every ELF executable linked against libc. (aka most of them)
 
@@ -42,26 +42,27 @@ To get a clearer picture one should try to understand the context.
 ***How does a program start?***
 
 A program binary image is probably created by the system linker ld which links against a set of provided objects.
-By default, ld looks for a special symbol called \_start in one of the object files linked into the program, and sets the entry point to the address of that symbol.
+By default, ld looks for a special symbol called `_start` in one of the object files linked into the program, and sets the entry point to the address of that symbol.
 
 
 ***How does a C code actually start?***
 
 A correctly compiled and linked C code with gcc shares some attached code since C code requires some support libraries such as the gcc runtime and libc in order to run.
-By following the special symbol \_start of a gcc properly compiled and linked binary image.
+By following the special symbol `_start` of a gcc properly compiled and linked binary image.
 
 ie: `objdump -d mybinary | grep -A15 "_start"` 
 
-one will notice some call to \_libc\_start\_main preceding a hlt instruction.
+one will notice some call to `_libc_start_main` preceding a hlt instruction.
 
 
 ***So how does control flow actually pass to our C code?***
 
 Running the program stepi from GDB, then some Python script to produce a graph, a sequence of function calls can be summarized as below:
 
-[call graph]
+![Function calls sequence][calls]
 
-Cool, so what does \_libc\_start\_main actually do? Ignoring some details, here's a list of things that it does for a statically linked program:
+
+Cool, so what does `_libc_start_main` actually do? Ignoring some details, here's a list of things that it does for a statically linked program:
 
 <ul>
 <li>Figure out where environment variables are on the stack.</li>
@@ -77,8 +78,8 @@ Cool, so what does \_libc\_start\_main actually do? Ignoring some details, here'
 
 Some programming environments require running custom code before and after main.
 This is implemented by means of cooperation between the compiler/linker and the C library.
-For example, the \_libc\_csu\_init (which, as you can see above, is called before the user's main) calls into special code that's inserted by the linker. 
-The same goes for \_libc\_csu\_fini and finalization.
+For example, the `_libc_csu_init` (which, as you can see above, is called before the user's main) calls into special code that's inserted by the linker. 
+The same goes for `_libc_csu_fini` and finalization.
 You can also ask the compiler to register your function to be executed as one of the constructors or destructors. 
 
 For example:
@@ -99,7 +100,7 @@ void myconstructor() {
 ```
 
 myconstructor will run before main. The linker places its address in a special array of constructors located in the .ctors section. 
-\_libc\_csu\_init goes over this array and calls all functions listed in it.
+`_libc_csu_init` goes over this array and calls all functions listed in it.
 
 Cool, now we have a better picture of how and from where control flow goes.
 
@@ -110,3 +111,11 @@ Obviously, universal ROP.
 ## But still.. how?<a id="sec-5" name="sec-5"></a>
 
 Where does these gadgets reside? What would they look like? How would one chain those? one asks.
+
+
+
+
+
+
+[whodis]: https://raw.githubusercontent.com/kaftejiman/pwn/main/ret2csu/whodis.jpeg 
+[calls]: https://raw.githubusercontent.com/kaftejiman/pwn/main/ret2csu/call_seq.png
