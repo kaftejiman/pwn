@@ -1,6 +1,9 @@
 # ELI5 ret2csu 
 
-As far as my understanding goes, take it with a grain of salt
+As far as my understanding goes, take it with a grain of salt.
+Tests done on a machine with the below specifications:
+Arch: AMD64
+OS: Linux Ubuntu
 
 <div id="table-of-contents">
 <h2>Table of Contents</h2>
@@ -54,12 +57,12 @@ A correctly compiled and linked C code with gcc shares some attached code since 
 
 By following the special symbol `_start` of a gcc properly compiled and linked binary image, 
 
-ie: `objdump -d mybinary | grep -A15 "_start"` , one will notice some call to `_libc_start_main` preceding a hlt instruction.
+ie: `objdump -d mybinary | grep -A15 "_start"` , one will notice some call to `_libc_start_main` preceeding a hlt instruction.
 
 
 ***So how does control flow actually pass to our C code?***
 
-Running the program stepi from GDB, then some Python script to produce a graph, a sequence of function calls can be order and summarized as the graph below:
+Running the program stepi from GDB, then some Python script to produce a graph, a sequence of function calls can be ordered and summarized as the graph below:
 
 ![Function calls sequence][calls]
 
@@ -102,9 +105,8 @@ void myconstructor() {
 ```
 
 myconstructor will run before main. The linker places its address in a special array of constructors located in the .ctors section. 
-`_libc_csu_init` goes over this array and calls all functions listed in it.
+`_libc_csu_init` goes over this array and calls all functions listed in it. Which is essentially what we will be using for ret2csu.
 
-Cool, now we have a better picture of how and from where control flow goes.
 
 ***So, since some extra code is attached, what would finding universal gadgets in this code result in?***
 
@@ -113,6 +115,39 @@ Obviously, universal ROP.
 ## But still.. how?<a id="sec-5" name="sec-5"></a>
 
 ***Where does these gadgets reside? What would they look like? How would one chain those? one asks.***
+
+Examining `_libc_csu_init` in the context of finding some useful re-usable piece of code, one would notice some interesting instruction blocks.
+
+In fact, the disassembly of `_libc_csu_init` goes as follow (redacted):
+
+```
+$ objdump -d myprogram | grep -A48 '<__libc_csu_init>:'
+0000000000403220 <__libc_csu_init>:
+** some instructions **
+...
+  403290:       4c 89 ea                mov    %r13,%rdx 
+  403293:       4c 89 e6                mov    %r12,%rsi
+  403296:       89 ef                   mov    %ebp,%edi
+  403298:       41 ff 14 df             callq  *(%r15,%rbx,8)
+  40329c:       48 83 c3 01             add    $0x1,%rbx
+  4032a0:       49 39 de                cmp    %rbx,%r14
+  4032a3:       75 eb                   jne    403290 <__libc_csu_init+0x70>
+  4032a5:       48 83 c4 08             add    $0x8,%rsp
+  4032a9:       5b                      pop    %rbx
+  4032aa:       5d                      pop    %rbp
+  4032ab:       41 5c                   pop    %r12
+  4032ad:       41 5d                   pop    %r13
+  4032af:       41 5e                   pop    %r14
+  4032b1:       41 5f                   pop    %r15
+  4032b3:       c3                      retq
+  ```
+
+
+
+
+
+* The called function's address is the content of the address referenced by `R15 + RBX*0x8`.
+
 
 
 
