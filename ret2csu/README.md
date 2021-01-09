@@ -31,13 +31,11 @@ When in lack of sufficient gadgets to build your rop (aka lack of control over s
 ## Why dis?<a id="sec-3" name="sec-3"></a>
 
 To have full control over a call.
-
 To bypass some security measures (ie: ASLR) by leaking arbitrary executable memory resulting in a direct libc de-randomization.
 
 ## How even?<a id="sec-4" name="sec-4"></a>
 
 If I am actually compiling an empty C code (ie: only return) where does those ret2csu gadgets come from?
-
 To get a clearer picture one should try to understand the context. 
 
 
@@ -50,8 +48,9 @@ By default, ld looks for a special symbol called \_start in one of the object fi
 ***How does a C code actually start?***
 
 A correctly compiled and linked C code with gcc shares some attached code since C code requires some support libraries such as the gcc runtime and libc in order to run.
-
-By following the special symbol \_start of a gcc properly compiled and linked binary image (ie: `objdump -d mybinary | grep -A15 "_start"` ), one will notice some call to \_libc\_start\_main preceding a hlt instruction.
+By following the special symbol \_start of a gcc properly compiled and linked binary image 
+ie: `objdump -d mybinary | grep -A15 "_start"` 
+one will notice some call to \_libc\_start\_main preceding a hlt instruction.
 
 
 ***So how does control flow actually pass to our C code?***
@@ -75,13 +74,9 @@ Cool, so what does \_libc\_start\_main actually do? Ignoring some details, here'
 </ul>
 
 Some programming environments require running custom code before and after main.
-
 This is implemented by means of cooperation between the compiler/linker and the C library.
-
 For example, the \_libc\_csu\_init (which, as you can see above, is called before the user's main) calls into special code that's inserted by the linker. 
-
 The same goes for \_libc\_csu\_fini and finalization.
-
 You can also ask the compiler to register your function to be executed as one of the constructors or destructors. 
 
 For example:
