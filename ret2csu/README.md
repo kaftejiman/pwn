@@ -202,7 +202,7 @@ Take a step back, notice the instructions numbered 1,2,3 and 4:
 * [2] : Comparison in [2] can be satisfied by setting `R14` to `RBX + 1`.
 * [3] : Since [2] is satisfied, comparison results in zero, execution continues forward.
 * [4] : Notice top of stack changes.
-* [5] : pop address from stack, call it.
+* [5] : Pop address from stack, call it.
 
 What if, we satisfy *[1]* with a call (content of `R15`) that doesnt alter the state of our previously prepared registers (parameter registers)? 
 
