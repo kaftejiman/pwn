@@ -1,7 +1,8 @@
 # ret2csu
 
 As far as my understanding goes, take it with a grain of salt.
-Tests programs done on an AMD64 Linux Ubuntu
+
+Tests carried on a AMD64 Linux Ubuntu.
 
 <div id="table-of-contents">
 <h2>Table of Contents</h2>
