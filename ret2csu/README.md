@@ -230,16 +230,20 @@ If so, with *[2]* satisfied, when ropping, execution continues, *[4]* stack chan
 ```
 If we could get some pointer to it, but wait remember those `_init` and `_fini` we saw earlier, some pointers must be kept somewhere.
 
-In DYNAMIC variable ie. .dynamic section of executable we can find pointers to `_init` and `_fini` section 
+In fact, in DYNAMIC variable ie. .dynamic section of executable we can find pointers to `_init` and `_fini` section.
 
-For de-randomizing libc, one can use &GOT_TABLE[1] which is the address contained in the first GOT entry.
+Profit.
 
+For de-randomizing libc, one can use &GOT_TABLE, coupled with some read(), write() or send(), recv() (ie: usually available in CTF challenges)
+
+*ie: calling write@plt(fd, &GOT_TABLE[1], 8) to write to fd the first entry of the GOT_TABLE, leading in derandomizing libc*
 
 ## In practice would you?
 
 ***ROP Emporium - ret2csu***
 
 Binaries provided.
+
 call ret2win(0xdeadbeefdeadbeef, 0xcafebabecafebabe, 0xd00df00dd00df00d) to get a flag.
 
 ```python
