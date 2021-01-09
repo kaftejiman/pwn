@@ -1,9 +1,7 @@
 # ELI5 ret2csu 
 
 As far as my understanding goes, take it with a grain of salt.
-Tests done on a machine with the below specifications:
-Arch: AMD64
-OS: Linux Ubuntu
+Tests programs done on an AMD64 Linux Ubuntu
 
 <div id="table-of-contents">
 <h2>Table of Contents</h2>
@@ -49,6 +47,8 @@ To get a clearer picture one should try to understand the context.
 A program binary image is probably created by the system linker ld which links against a set of provided objects.
 
 By default, ld looks for a special symbol called `_start` in one of the object files linked into the program, and sets the entry point to the address of that symbol.
+
+(set LD_DEBUG to all when running a program binary `$ LD_DEBUG=all ./program` to see the ld in action)
 
 
 ***How does a C code actually start?***
@@ -151,19 +151,19 @@ In fact, the disassembly of `__libc_csu_init` goes as follow (Ghidra, redacted):
         004033c0 4c 89 ea        MOV        RDX,R13
         004033c3 4c 89 e6        MOV        RSI,R12
         004033c6 89 ef           MOV        EDI,EBP
-        004033c8 41 ff 14 df     CALL       qword ptr [R15 + RBX*0x8]
+        004033c8 41 ff 14 df     CALL       qword ptr [R15 + RBX*0x8] <-- 1
         004033cc 48 83 c3 01     ADD        RBX,0x1
-        004033d0 49 39 de        CMP        R14,RBX                   <-- 1
-        004033d3 75 eb           JNZ        LAB_004033c0 		      <-- 1
+        004033d0 49 39 de        CMP        R14,RBX                   <-- 2
+        004033d3 75 eb           JNZ        LAB_004033c0 		      <-- 3
                              LAB_004033d5                         
-        004033d5 48 83 c4 08     ADD        RSP,0x8
+        004033d5 48 83 c4 08     ADD        RSP,0x8                   <-- 4
         004033d9 5b              POP        RBX
         004033da 5d              POP        RBP
         004033db 41 5c           POP        R12
         004033dd 41 5d           POP        R13
         004033df 41 5e           POP        R14
         004033e1 41 5f           POP        R15
-        004033e3 c3              RET
+        004033e3 c3              RET                                  <-- 5
 
   ```
 
@@ -190,23 +190,42 @@ Notice how the three parameters of the call and the call destination are *almost
 
 **If we could just somehow break free of those constraints..**
 
-What if, we rop to popper gadget first, prepare our call parameters, rdi can be restored later anyways, that would be half the battle.
+What if, we rop to popper gadget first, prepare our call parameters, rdi can be restored later anyways so second constraint is solved, that would be half the battle.
 
 But how to setup the call destination?
 
+Take a step back, notice the instructions numbered 1,2,3 and 4:
+* [1] : We have full control over `R15` and `RBX`, setting `RBX` to 0 would result in a call to content of `R15`.
+* [2] : Comparison in [2] can be satisfied by setting `R14` to `RBX + 1`.
+* [3] : Since [2] is satisfied, comparison results in zero, execution continues forward.
+* [4] : Notice top of stack changes.
+* [5] : pop address from stack, call it.
+
+What if, we satisfy *[1]* with a call (content of `R15`) that doesnt alter the state of our previously prepared registers (parameter registers)? 
+
+If so, with *[2]* satisfied, when ropping execution continues, *[4]* stack changes, add padding to fix that, fill those registers with dummy content, we wont need them anymore, place what you want to call on stack. *[5]* would return to that. PROFIT!
+
+In fact, 
 
 
-Take a step back, notice how 
 
 
 
 
-## tldr, in practice would you?
+## In practice would you?
+
+***ROP Emporium - ret2csu***
+
+call ret2win(0xdeadbeefdeadbeef, 0xcafebabecafebabe, 0xd00df00dd00df00d)
 
 
 
 
-
+## References:
+ 
+ * https://eli.thegreenplace.net/2012/08/13/how-statically-linked-programs-run-on-linux
+ * https://i.blackhat.com/briefings/asia/2018/asia-18-Marco-return-to-csu-a-new-method-to-bypass-the-64-bit-Linux-ASLR-wp.pdf
+ * https://www.cs.stevens.edu/~jschauma/631A/elf.html
 
 [whodis]: https://raw.githubusercontent.com/kaftejiman/pwn/main/ret2csu/whodis.jpeg 
 [calls]: https://raw.githubusercontent.com/kaftejiman/pwn/main/ret2csu/call_seq.png
