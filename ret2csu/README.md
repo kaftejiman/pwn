@@ -31,33 +31,35 @@ When in lack of sufficient gadgets to build your rop (aka lack of control over s
 ## Why dis?<a id="sec-3" name="sec-3"></a>
 
 To have full control over a call.
+
 To bypass some security measures (ie: ASLR) by leaking arbitrary executable memory resulting in a direct libc de-randomization.
 
 ## How even?<a id="sec-4" name="sec-4"></a>
 
-If I am actually compiling an empty C code (ie: only return) where does those ret2csu gadgets come from?
+***If I am actually compiling an empty C code (ie: only return) where does those ret2csu gadgets come from?***
+
 To get a clearer picture one should try to understand the context. 
 
 
 ***How does a program start?***
 
 A program binary image is probably created by the system linker ld which links against a set of provided objects.
+
 By default, ld looks for a special symbol called `_start` in one of the object files linked into the program, and sets the entry point to the address of that symbol.
 
 
 ***How does a C code actually start?***
 
 A correctly compiled and linked C code with gcc shares some attached code since C code requires some support libraries such as the gcc runtime and libc in order to run.
-By following the special symbol `_start` of a gcc properly compiled and linked binary image.
 
-ie: `objdump -d mybinary | grep -A15 "_start"` 
+By following the special symbol `_start` of a gcc properly compiled and linked binary image, 
 
-one will notice some call to `_libc_start_main` preceding a hlt instruction.
+ie: `objdump -d mybinary | grep -A15 "_start"` , one will notice some call to `_libc_start_main` preceding a hlt instruction.
 
 
 ***So how does control flow actually pass to our C code?***
 
-Running the program stepi from GDB, then some Python script to produce a graph, a sequence of function calls can be summarized as below:
+Running the program stepi from GDB, then some Python script to produce a graph, a sequence of function calls can be order and summarized as the graph below:
 
 ![Function calls sequence][calls]
 
@@ -110,9 +112,7 @@ Obviously, universal ROP.
 
 ## But still.. how?<a id="sec-5" name="sec-5"></a>
 
-Where does these gadgets reside? What would they look like? How would one chain those? one asks.
-
-
+***Where does these gadgets reside? What would they look like? How would one chain those? one asks.***
 
 
 
