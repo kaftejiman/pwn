@@ -117,7 +117,7 @@ Obviously, universal ROP.
 
 `__libc_csu_init` does some calls, would it have enough gadgets for a controlled call?
 
-In fact, the disassembly of `__libc_csu_init` goes as follow (with Ghidra, redacted):
+In fact, the disassembly of `__libc_csu_init` goes as follow (Ghidra, redacted):
 
 ```
                              **************************************************************
@@ -153,8 +153,8 @@ In fact, the disassembly of `__libc_csu_init` goes as follow (with Ghidra, redac
         004033c6 89 ef           MOV        EDI,EBP
         004033c8 41 ff 14 df     CALL       qword ptr [R15 + RBX*0x8]
         004033cc 48 83 c3 01     ADD        RBX,0x1
-        004033d0 49 39 de        CMP        R14,RBX
-        004033d3 75 eb           JNZ        LAB_004033c0
+        004033d0 49 39 de        CMP        R14,RBX                   <-- 1
+        004033d3 75 eb           JNZ        LAB_004033c0 		      <-- 1
                              LAB_004033d5                         
         004033d5 48 83 c4 08     ADD        RSP,0x8
         004033d9 5b              POP        RBX
@@ -183,7 +183,28 @@ Gadgets are:
 | pop r15     |
 | ret         |
 
-One would notice that 
+Notice how the three parameters of the call and the call destination are *almost* totally controlled by popper gadget:
+
+* *almost* as in control of the call destination is limited, the call is carried to the content at the address `R15 + RBX*0x8` not the value of the address as is.
+* *almost* as in control of rdi register is limited, we control half of it (edi)
+
+**If we could just somehow break free of those constraints..**
+
+What if, we rop to popper gadget first, prepare our call parameters, rdi can be restored later anyways, that would be half the battle.
+
+But how to setup the call destination?
+
+
+
+Take a step back, notice how 
+
+
+
+
+## tldr, in practice would you?
+
+
+
 
 
 
